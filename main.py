@@ -1,15 +1,12 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import cv2
-import numpy as np
-from PIL import Image
-import io
-import os
+import replicate
+import shutil
+import requests
 
 app = FastAPI()
 
-# CORS (aby fungoval Netlify)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,40 +15,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def enhance_image(image):
-    img = np.array(image)
-
-    # Sharpen
-    kernel = np.array([[0, -1, 0],
-                       [-1, 5,-1],
-                       [0, -1, 0]])
-    sharp = cv2.filter2D(img, -1, kernel)
-
-    # Contrast + color
-    lab = cv2.cvtColor(sharp, cv2.COLOR_RGB2LAB)
-    l, a, b = cv2.split(lab)
-
-    clahe = cv2.createCLAHE(clipLimit=3.0)
-    cl = clahe.apply(l)
-
-    merged = cv2.merge((cl, a, b))
-    final = cv2.cvtColor(merged, cv2.COLOR_LAB2RGB)
-
-    return final
-
 @app.get("/")
 def home():
-    return {"message": "Photo Enhancer API běží 🚀"}
+    return {"message": "🔥 AI enhancer běží"}
 
 @app.post("/enhance/")
 async def enhance(file: UploadFile = File(...)):
-    contents = await file.read()
-    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    input_path = "input.jpg"
+    step1 = "face.png"
+    step2 = "final.png"
 
-    enhanced = enhance_image(image)
+    # save input
+    with open(input_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-    output_path = "output.jpg"
-    Image.fromarray(enhanced).save(output_path)
+    # 🧠 STEP 1 — FACE AI
+    face_output = replicate.run(
+        "sczhou/codeformer",
+        input={
+            "image": open(input_path, "rb"),
+            "face_upsample": True,
+            "background_enhance": False,
+            "codeformer_fidelity": 0.6
+        }
+    )
 
-    return FileResponse(output_path)
+    img_data = requests.get(face_output).content
+    with open(step1, "wb") as f:
+        f.write(img_data)
+
+    # 🔍 STEP 2 — UPSCALE
+    upscale_output = replicate.run(
+        "nightmareai/real-esrgan",
+        input={
+            "image": open(step1, "rb"),
+            "scale": 4
+        }
+    )
+
+    img_data2 = requests.get(upscale_output).content
+    with open(step2, "wb") as f:
+        f.write(img_data2)
+
+    return FileResponse(step2)
 
