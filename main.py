@@ -4,7 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import replicate
 import shutil
 import requests
+import os
+import replicate
 
+client = replicate.Client(api_token=os.environ["REPLICATE_API_TOKEN"])
 app = FastAPI()
 
 app.add_middleware(
