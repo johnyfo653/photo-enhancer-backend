@@ -32,10 +32,8 @@ async def enhance(file: UploadFile = File(...)):
     try:
         image_bytes = await file.read()
 
-        face_output = client.run(
-            "sczhou/codeformer",
-            input={
-                "image": image_bytes,
+        upscale_output = client.run(
+    "nightmareai/real-esrgan:latest",                "image": image_bytes,
                 "face_upsample": True,
                 "background_enhance": False,
                 "codeformer_fidelity": 0.6
