@@ -5,8 +5,15 @@ import replicate
 import requests
 import os
 
-client = replicate.Client(api_token=os.environ["REPLICATE_API_TOKEN"])
+import os
+import replicate
 
+token = os.getenv("REPLICATE_API_TOKEN")
+
+if not token:
+    print("❌ CHYBÍ REPLICATE_API_TOKEN")
+
+client = replicate.Client(api_token=token) if token else None
 app = FastAPI()
 
 app.add_middleware(
