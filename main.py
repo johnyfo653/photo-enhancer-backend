@@ -1,5 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse
+om fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import replicate
 import requests
