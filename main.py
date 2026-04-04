@@ -19,21 +19,19 @@ app.add_middleware(
 token = os.getenv("REPLICATE_API_TOKEN")
 
 if not token:
-    raise Exception("❌ Missing REPLICATE_API_TOKEN")
+    raise Exception("Missing REPLICATE_API_TOKEN")
 
 client = replicate.Client(api_token=token)
 
 @app.get("/")
 def home():
-    return {"message": "🚀 Photo Enhancer API běží"}
+    return {"message": "🚀 Photo Enhancer běží"}
 
 @app.post("/enhance/")
 async def enhance(file: UploadFile = File(...)):
     try:
-        # načtení obrázku
         image_bytes = await file.read()
 
-        # STEP 1 — face enhance
         face_output = client.run(
             "sczhou/codeformer",
             input={
@@ -46,7 +44,6 @@ async def enhance(file: UploadFile = File(...)):
 
         face_data = requests.get(face_output).content
 
-        # STEP 2 — upscale
         upscale_output = client.run(
             "nightmareai/real-esrgan",
             input={
